@@ -1,5 +1,7 @@
 <?php
 require_once ("../RedisClient.php");
+require_once ("../predis-1.1/autoload.php");
+use Predis\Command\ScriptCommand;
 
 $conn = RedisClient::getConn();
 
@@ -72,3 +74,62 @@ function loop(){
 
 //loop();
 
+
+/**
+ * 从消息队列中搜索符合条件的最近n条消息
+ * 返回消息内容并从消息队列中删除
+ * @param string queue_key 消息队列的key
+ * @param int $min      搜索时间戳开始时间
+ * @param int $max      搜索时间戳结束时间
+ * @param int $offset   要跳过的消息数量
+ * @param int $limit    获取消息数量
+ * @return array 删除成功的消息的消息内容
+ * @
+ */
+class getAndDeleteRecentMessageScript extends ScriptCommand {
+
+    public function getKeysCount()
+    {
+        return 1;
+    }
+
+    public function getScript()
+    {
+        return <<<LUA
+-- 消息队列的redisKey
+local queue = KEYS[1]
+-- 搜索范围的最大/最小值,偏移量和取值数量
+local min, max, offset, count = ARGV[1], ARGV[2], ARGV[3], ARGV[4] 
+local message = false
+local messages = {}
+local queue_value = {}
+local insert = table.insert
+-- 获取最近n条消息并删除消息
+queue_value = redis.call("ZRANGEBYSCORE",queue,min,max,"LIMIT",offset,count)
+for idx, message in pairs(queue_value) do
+    if redis.call("ZREM",queue,message) then
+        insert(messages, idx, message)
+    end
+end
+-- 返回删除成功的消息
+return messages
+LUA;
+
+    }
+}
+$conn->getProfile()->defineCommand('get_and_delete_recent_message','getAndDeleteRecentMessageScript');
+
+/********* 测试从延迟队列中弹出消息(lua版本) start **********/
+//向延迟队列中写入10条数据
+foreach(range(1,10) as $msg_id){
+    $success = delay("msg{$msg_id}");
+    if($success){
+        echo "写入消息[msg{$msg_id}], 成功" . PHP_EOL;
+    }
+}
+
+//删除最近写入的 2条
+$ret = $conn->get_and_delete_recent_message('delay:',0,microtime(true),3,2);
+
+var_export($ret);
+/********* 测试从延迟队列中弹出消息(lua版本) end **********/
