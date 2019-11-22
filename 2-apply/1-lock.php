@@ -1,8 +1,7 @@
 <?php
 /**
  * 分布式锁
- * 3个请求锁的演变版本,释放锁未讲解,lua可以解决锁释放问题,详见官网手册
- * https://redis.io/commands/set
+ * 3个请求锁的演变版本,1个释放锁的lua功能
  */
 require_once ("../RedisClient.php");
 
@@ -79,6 +78,7 @@ function perfect () {
  * lua版释放锁, 把比对锁值和删除锁组合成原子操作
  * @param string $lock_key 锁的redisKey
  * @param string $lock_value 锁的value
+ * @link https://redis.io/commands/set
  * Class releaseLockScript
  */
 class releaseLockScript extends ScriptCommand {
