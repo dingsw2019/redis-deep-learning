@@ -120,16 +120,52 @@ LUA;
 $conn->getProfile()->defineCommand('get_and_delete_recent_message','getAndDeleteRecentMessageScript');
 
 /********* 测试从延迟队列中弹出消息(lua版本) start **********/
-//向延迟队列中写入10条数据
-foreach(range(1,10) as $msg_id){
-    $success = delay("msg{$msg_id}");
-    if($success){
-        echo "写入消息[msg{$msg_id}], 成功" . PHP_EOL;
-    }
-}
-
-//删除最近写入的 2条
-$ret = $conn->get_and_delete_recent_message('delay:',0,microtime(true),3,2);
-
-var_export($ret);
+////向延迟队列中写入10条数据
+//foreach(range(1,10) as $msg_id){
+//    $success = delay("msg{$msg_id}");
+//    if($success){
+//        echo "写入消息[msg{$msg_id}], 成功" . PHP_EOL;
+//    }
+//}
+//
+////删除最近写入的 2条
+//$ret = $conn->get_and_delete_recent_message('delay:',0,microtime(true),3,2);
+//
+//var_export($ret);
 /********* 测试从延迟队列中弹出消息(lua版本) end **********/
+
+$arr = [
+    1001 => [
+        'weight' => '0.31',
+    ],
+    1002 => [
+        'weight' => '0.21',
+    ],
+    1003 => [
+        'weight' => '0.51',
+    ],
+    1004 => [
+        'weight' => '0.11',
+    ]
+];
+
+usort($arr,function($a,$b){
+    var_dump($b['weight'] - $a['weight']);
+    return ($b['weight'] - $a['weight']) > 0 ? 1 : -1;
+});
+
+var_export($arr);
+
+
+//$a = array(3, 2, 5, 6, 1);
+//
+//usort($a, function($a, $b){
+//    if ($a == $b) {
+//        return 0;
+//    }
+////    return ($a < $b) ? -1 : 1;
+//    echo "{$b} - {$a} = " . ($b-$a) . PHP_EOL;
+//    return $b - $a;
+//});
+//
+//var_dump($a);
