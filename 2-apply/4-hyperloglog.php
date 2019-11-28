@@ -76,4 +76,60 @@ function test_hyper_log2(int $loop){
 
 //loop=100000,total=99715,误差=0.285%
 //重跑一次,结果无变化,说明有去重功能
-test_hyper_log2(100000);
+//test_hyper_log2(100000);
+
+
+/************* HyperLogLog 实现原理 *************/
+
+//算低位0的个数
+function low_zeros($value){
+    foreach(range(1,32) as $i){
+        if ($value>>$i<<$i != $value){
+            break;
+        }
+    }
+
+    return $i-1;
+}
+
+//通过随机数记录最大的低位零的个数
+class BitKeeper {
+    public $maxbits = 0;
+
+    function random(){
+        $value = mt_rand(0,2**32-1);
+        $bits = low_zeros($value);
+        if ($bits > $this->maxbits){
+            $this->maxbits = $bits;
+        }
+    }
+}
+
+class Experiment {
+    public $n;
+    public $keeper;
+
+    public function __construct($n)
+    {
+        $this->n = $n;
+        $this->keeper = new BitKeeper();
+    }
+
+    function do(){
+        foreach(range(0,$this->n) as $i){
+            $this->keeper->random();
+        }
+    }
+
+    function debug(){
+        echo $this->n . sprintf("%.2f",$this->n) . $this->keeper->maxbits;
+    }
+}
+
+foreach(range(1000,100000,100) as $i){
+    $exp = new Experiment($i);
+    $exp->do();
+    $exp->debug();
+}
+
+//echo low_zeros(212606320);
