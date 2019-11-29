@@ -115,21 +115,76 @@ class Experiment {
         $this->keeper = new BitKeeper();
     }
 
+    //获取最大的低位零的个数
     function do(){
         foreach(range(0,$this->n) as $i){
             $this->keeper->random();
         }
     }
 
+    //输出n值,log2(n),k值
     function debug(){
-        echo $this->n . sprintf("%.2f",$this->n) . $this->keeper->maxbits;
+        echo $this->n ." ". sprintf("%.2f",log($this->n,2))
+            ." ". $this->keeper->maxbits . PHP_EOL;
     }
 }
 
-foreach(range(1000,100000,100) as $i){
-    $exp = new Experiment($i);
-    $exp->do();
-    $exp->debug();
-}
+//输出随机结果
+//foreach(range(1000,100000,100) as $i){
+//    $exp = new Experiment($i);
+//    $exp->do();
+//    $exp->debug();
+//    if($i>37600){
+//        break;
+//    }
+//}
 
 //echo low_zeros(212606320);
+
+class Experiment2 {
+    public $n;
+    public $k;
+    public $keepers;
+
+    public function __construct($n,$k=1024)
+    {
+        $this->n = $n;
+        $this->k = $k;
+        foreach(range(0,$k) as $i){
+            $this->keepers[$i] = new BitKeeper();
+        }
+    }
+
+    //获取最大的低位零的个数
+    function do(){
+        foreach(range(0,$this->n) as $i){
+            $m = mt_rand(0,1<<32-1);
+            $keeper = $this->keepers[(($m & 0xfff0000)>>16) % count($this->keepers)];
+            $keeper->random($m);
+        }
+    }
+
+    //输出n值,log2(n),k值
+    function debug(){
+        echo $this->n ." ". sprintf("%.2f",log($this->n,2))
+            ." ". $this->keeper->maxbits . PHP_EOL;
+    }
+
+    function estimate(){
+        $sumbits_inverse = 0;
+        foreach($this->keepers as $keeper){
+            $sumbits_inverse += 1.0 / $keeper->maxbits;
+        }
+        $avgbits = $this->k / $sumbits_inverse;
+        return 2**$avgbits*$this->k;
+    }
+}
+
+//输出随机结果
+foreach(range(1000,100000,100) as $i){
+    $exp = new Experiment2($i);
+    $exp->do();
+    $est = $exp->estimate();
+    echo sprintf("%.2f",$est)." ". sprintf("%.2f",abs($est-$i))
+        . PHP_EOL;
+}
