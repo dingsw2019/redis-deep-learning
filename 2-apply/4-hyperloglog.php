@@ -141,7 +141,7 @@ class Experiment {
 
 //echo low_zeros(212606320);
 
-class Experiment2 {
+class ExperimentWithBucket {
     public $n;
     public $k;
     public $keepers;
@@ -164,27 +164,26 @@ class Experiment2 {
         }
     }
 
-    //输出n值,log2(n),k值
-    function debug(){
-        echo $this->n ." ". sprintf("%.2f",log($this->n,2))
-            ." ". $this->keeper->maxbits . PHP_EOL;
-    }
-
     function estimate(){
+        //平均数的倒数
         $sumbits_inverse = 0;
         foreach($this->keepers as $keeper){
-            $sumbits_inverse += 1.0 / $keeper->maxbits;
+            if($keeper->maxbits){
+                $sumbits_inverse += 1.0 / $keeper->maxbits;
+            }
         }
+        //调和平均数
         $avgbits = $this->k / $sumbits_inverse;
         return 2**$avgbits*$this->k;
     }
 }
 
 //输出随机结果
-foreach(range(1000,100000,100) as $i){
-    $exp = new Experiment2($i);
+foreach(range(100000,1000000,100000) as $i){
+    $exp = new ExperimentWithBucket($i);
     $exp->do();
     $est = $exp->estimate();
-    echo sprintf("%.2f",$est)." ". sprintf("%.2f",abs($est-$i))
+    echo $i ." ".sprintf("%.2f",$est)." "
+        . sprintf("%.2f",abs($est-$i)/$i)
         . PHP_EOL;
 }
