@@ -1,4 +1,16 @@
 <?php
+
+/**
+ * redis如何实现延迟队列？
+ * 1.用sorted set结构。可自定义延迟时间
+ * 2.blpop。顺序执行
+ *
+ * 多线程消费延迟队列，如何处理？
+ * 1.先获取最近一条消息,再删除从队列获取的消息
+ * 2.谁删除成功了,谁就可以执行其他代码。
+ * 因为redis是单线程的,redis返回的删除成功是唯一的
+ */
+
 require_once ("../RedisClient.php");
 require_once ("../predis-1.1/autoload.php");
 use Predis\Command\ScriptCommand;
@@ -133,39 +145,3 @@ $conn->getProfile()->defineCommand('get_and_delete_recent_message','getAndDelete
 //
 //var_export($ret);
 /********* 测试从延迟队列中弹出消息(lua版本) end **********/
-
-$arr = [
-    1001 => [
-        'weight' => '0.31',
-    ],
-    1002 => [
-        'weight' => '0.21',
-    ],
-    1003 => [
-        'weight' => '0.51',
-    ],
-    1004 => [
-        'weight' => '0.11',
-    ]
-];
-
-usort($arr,function($a,$b){
-    var_dump($b['weight'] - $a['weight']);
-    return ($b['weight'] - $a['weight']) > 0 ? 1 : -1;
-});
-
-var_export($arr);
-
-
-//$a = array(3, 2, 5, 6, 1);
-//
-//usort($a, function($a, $b){
-//    if ($a == $b) {
-//        return 0;
-//    }
-////    return ($a < $b) ? -1 : 1;
-//    echo "{$b} - {$a} = " . ($b-$a) . PHP_EOL;
-//    return $b - $a;
-//});
-//
-//var_dump($a);
